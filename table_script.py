@@ -1,6 +1,10 @@
+import time
 import requests
 from urllib.parse import quote
 from urllib.parse import urljoin
+
+from seatable_api import Base, context
+from seatable_api.constants import UPDATE_DTABLE
 
 class link_gen:
     def __init__(self, token):
@@ -29,7 +33,7 @@ class link_gen:
             return name_lst
         except:
             return response.get('error_msg')
-    
+
     def get_link(self, file_path):
         '''Get the link of the file at file_path'''
         file_url = quote(file_path, safe='')
@@ -58,8 +62,22 @@ class link_gen:
             return ans_lst
         except:
             return response.get('error_msg')
-    
 
-if __name__ == "__main__":
-    test = link_gen("e86e560e3327a3022ed2f38f58f9b66af706ae68")
-    print(test.get_link("归档/2018春微积分II期中试卷.pdf"))
+def on_update(data, index, *args):
+    try:
+        print("Updated\n")
+        print("Data: " + data + "\n")
+    except:
+        print("Error\n")
+
+
+if __name__ == '__main__':
+    server_url = context.server_url or "https://table.nju.edu.cn"
+    api_token = context.api_token or "85fcdee63a06458873aaefd93a6e9b425ac2d90d"
+    base = Base(api_token, server_url)
+    base.auth(with_socket_io=True)
+    start_time = time.time()
+
+    n_time = time.time()
+    base.socketIO.on(UPDATE_DTABLE, on_update)
+    base.socketIO.wait()
