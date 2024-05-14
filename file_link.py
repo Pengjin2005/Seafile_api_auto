@@ -1,6 +1,7 @@
 import requests
 import re
 import sys
+import json
 from urllib.parse import quote
 from urllib.parse import urljoin
 
@@ -19,6 +20,7 @@ class FileLink:
         )
         self.folder_download = "https://box.nju.edu.cn/api/v2.1/multi-share-links/"
 
+    @staticmethod
     def is_file(str):
         pattern = r"^.+\.+.+$"
         return re.match(pattern, str)
@@ -37,32 +39,23 @@ class FileLink:
                 name_lst.append(str)
             ans = []
             if type == "folder":
-                for item in name_lst:
-                    print(item)
-                    if not self.is_file(item):
-                        ans.append(item)
-                return ans
+                return [item for item in name_lst if not self.is_file(item)]
+            elif type == "files":
+                return [item for item in name_lst if self.is_file(item)]
             else:
-                for item in name_lst:
-                    if self.is_file(item):
-                        ans.append(item)
-                return ans
+                raise ValueError("Unvalid type")
         except Exception as error:
             print(error, file=sys.stderr)
             return response.get("error_msg")
 
     def get_all_files(self, file_path=""):
         """Get all files in the repo"""
-        lst = self.get_files_lst(file_path)
-        for item in lst:
-            if self.is_file(item):
-                n_file_path = file_path + "/" + item
-                ans = self.get_link(n_file_path)
-                print(ans)
-            elif file_path == "":
-                self.get_all_files(file_path + item)
-            else:
-                self.get_all_files(file_path + "/" + item)
+        ans = {}
+        for file in self.get_sub("files", file_path):
+            ans[file] = self.get_link(file_path + "/" + file)
+        for folder in self.get_sub("folder", file_path):
+            ans = {**ans, **self.get_all_files(file_path + "/" + folder)}
+        return ans
 
     def get_link(self, file_path):
         """Get the link of the file at file_path"""
@@ -98,6 +91,7 @@ class FileLink:
 
 if __name__ == "__main__":
     test = FileLink("e86e560e3327a3022ed2f38f58f9b66af706ae68")
-    ans = test.get_sub(type="folder")
+    ans = test.get_all_files()
+    # ans = test.get_sub("files")
     # ans = test.get_link("归档/16年离散数学期中答案.pdf")
     print(ans)
