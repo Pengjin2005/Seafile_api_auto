@@ -5,9 +5,8 @@ import json
 from urllib.parse import quote
 from urllib.parse import urljoin
 
-
 class FileLink:
-    def __init__(self, token):
+    def __init__(self, token="852b86ff47ee99579d9c4f54e5fb737ac03f315a"):
         """Initialize the class with the token of the NJU Box"""
         self.headers = {
             "accept": "application/json",
@@ -52,8 +51,10 @@ class FileLink:
         """Get all files in the repo"""
         ans = {}
         for file in self.get_sub("files", file_path):
+            print(f"Processing {file} \n")
             ans[file] = self.get_link(file_path + "/" + file)
         for folder in self.get_sub("folder", file_path):
+            print(f"Processing {folder} \n")
             ans = {**ans, **self.get_all_files(file_path + "/" + folder)}
         return ans
 
@@ -90,7 +91,7 @@ class FileLink:
 
 
 if __name__ == "__main__":
-    test = FileLink("e86e560e3327a3022ed2f38f58f9b66af706ae68")
+    test = FileLink()
     ans = test.get_all_files()
     # ans = test.get_sub("files")
     # ans = test.get_link("归档/16年离散数学期中答案.pdf")
